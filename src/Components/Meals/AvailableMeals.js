@@ -1,35 +1,61 @@
+import { useEffect, useState } from 'react';
 import Card from '../UI/Card';
 import MealItem from './MealItem/MealItem';
 import classes from './AvailableMeals.module.css';
-const DUMMY_MEALS = [
-  {
-    id: 'm1',
-    name: 'Cheese',
-    description: 'Classic Pie with Mozzarella Cheese',
-    price: 15.99,
-  },
-  {
-    id: 'm2',
-    name: 'Pepperoni',
-    description: 'Our Most Popular Pie! Fresh Pepperoni Slices',
-    price: 17.99,
-  },
-  {
-    id: 'm3',
-    name: 'Pineapple',
-    description: 'For Our More Adventurous Eaters',
-    price: 19.99,
-  },
-  {
-    id: 'm4',
-    name: 'Margherita',
-    description: 'A Traditional Style with Fresh Mozz and Basil',
-    price: 18.99,
-  },
-];
 
 const AvailableMeals = () => {
-  const mealsList = DUMMY_MEALS.map((meal) => (
+  const [meals, setMeals] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [httpError, setHttpError] = useState();
+
+  useEffect(() => {
+    const fetchMeals = async () => {
+      const respone = await fetch(
+        'https://pizza-d31f7-default-rtdb.firebaseio.com/meals.json'
+      );
+
+      if (!respone.ok) {
+        throw new Error('something wrong!');
+      }
+      const responseData = await respone.json();
+
+      const loadedMeals = [];
+
+      for (const key in responseData) {
+        loadedMeals.push({
+          id: key,
+          name: responseData[key].name,
+          description: responseData[key].description,
+          price: responseData[key].price,
+        });
+      }
+      setMeals(loadedMeals);
+      setIsLoading(false);
+    };
+
+    fetchMeals().catch((error) => {
+      setIsLoading(false);
+      setHttpError(error.message);
+    });
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section className={classes.mealsLoading}>
+        <p>Loading...</p>
+      </section>
+    );
+  }
+
+  if (httpError) {
+    return (
+      <section className={classes.mealsError}>
+        <p>{httpError}</p>
+      </section>
+    );
+  }
+
+  const mealsList = meals.map((meal) => (
     <MealItem
       id={meal.id}
       key={meal.id}
